@@ -1,0 +1,229 @@
+{
+  "name": "monitor-disponibilidade",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7fa9d69c-4ec4-4d7a-bec3-c8ba5747053e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "73f19c97-5483-45cc-ae29-cdef5a50131a",
+              "name": "alvos",
+              "value": "={{ [{\"nome\":\"Roteador\",\"url\":\"http://192.168.0.1\"}, {\"nome\":\"Github\",\"url\":\"https://github.com\"}, {\"nome\":\"Telegram\", \"url\":\"https://api.telegram.org\"}, {\"nome\":\"Teste Para Erro\",\"url\":\"https://teste.erro.com.br\"} ] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "cb39339d-569f-4c05-a4d6-ca0240ff8aef",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "alvos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "2ff86d48-b1f2-450c-a1b7-c195060c3c02",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "id": "75170e72-f16e-4bd4-8133-cdd5bc01cf1c",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "fcacf7d0-ed57-497a-a6ec-0a2a537cea86",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "9a00d75f-b8bb-4b5b-b873-9e738554c8a3",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        -128
+      ],
+      "id": "61976a1d-8ee0-4416-9771-13c4415dad91",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=ALERTA: {{ $('Split Out').item.json.nome }} fora do ar!\nURL: {{ $('Split Out').item.json.url }}\nHorário: {{ $now.format('dd/MM/yyyy HH:mm') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        -32
+      ],
+      "id": "68b2c75e-a7bd-4b38-abd6-eb946d17610c",
+      "name": "Send a text message",
+      "webhookId": "064b9093-61a1-4381-b80f-25c1e3a9452a",
+      "credentials": {
+        "telegramApi": {
+          "id": "yYyUlQrBZR81znvQ",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e6b60f21-4a07-4ae1-864f-bdd284f67196",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ef1b713cd95c7d94af173b905db3560fd035968cbecdc73da090727e11bf018"
+  },
+  "nodeGroups": [],
+  "id": "aAN8LkDXVe82ZwV8",
+  "tags": []
+}
