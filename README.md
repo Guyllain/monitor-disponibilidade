@@ -16,7 +16,7 @@ Schedule Trigger (5 min)
     → IF (status 200-299)
         ├─ falso > Telegram (alerta)
         └─ verdadeiro > FIM
-HTTP Request (saída de erro: timeout/host foro) > Telegram (alerta)
+HTTP Request (saída de erro: timeout/host fora) > Telegram (alerta)
 
 ```
 
